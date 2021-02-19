@@ -93,17 +93,22 @@ public final class SqlSessionUtils {
 
     notNull(sessionFactory, NO_SQL_SESSION_FACTORY_SPECIFIED);
     notNull(executorType, NO_EXECUTOR_TYPE_SPECIFIED);
-
+    /**
+     * 从当前线程中 threadLocal获取回话持有器
+     */
     SqlSessionHolder holder = (SqlSessionHolder) TransactionSynchronizationManager.getResource(sessionFactory);
-
+    //从会话持有器中获取会话
     SqlSession session = sessionHolder(executorType, holder);
     if (session != null) {
       return session;
     }
 
     LOGGER.debug(() -> "Creating a new SqlSession");
+    //创建新的session
     session = sessionFactory.openSession(executorType);
-
+    /**
+     * 将会话注册到当前线程的会话持有器中
+     */
     registerSessionHolder(sessionFactory, executorType, exceptionTranslator, session);
 
     return session;
@@ -133,8 +138,9 @@ public final class SqlSessionUtils {
 
       if (environment.getTransactionFactory() instanceof SpringManagedTransactionFactory) {
         LOGGER.debug(() -> "Registering transaction synchronization for SqlSession [" + session + "]");
-
+        //将会话封装成会话持有器
         holder = new SqlSessionHolder(session, executorType, exceptionTranslator);
+        //会话持有器注册到当前线程中
         TransactionSynchronizationManager.bindResource(sessionFactory, holder);
         TransactionSynchronizationManager
             .registerSynchronization(new SqlSessionSynchronization(holder, sessionFactory));
@@ -158,10 +164,11 @@ public final class SqlSessionUtils {
 
   private static SqlSession sessionHolder(ExecutorType executorType, SqlSessionHolder holder) {
     SqlSession session = null;
+    //会话持有器不为空 从中获取sqlsession会话
     if (holder != null && holder.isSynchronizedWithTransaction()) {
       if (holder.getExecutorType() != executorType) {
         throw new TransientDataAccessResourceException(
-            "Cannot change the ExecutorType when there is an existing transaction");
+          "Cannot change the ExecutorType when there is an existing transaction");
       }
 
       holder.requested();

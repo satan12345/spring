@@ -48,7 +48,9 @@ public abstract class SqlSessionDaoSupport extends DaoSupport {
    *          a factory of SqlSession
    */
   public void setSqlSessionFactory(SqlSessionFactory sqlSessionFactory) {
-    if (this.sqlSessionTemplate == null || sqlSessionFactory != this.sqlSessionTemplate.getSqlSessionFactory()) {
+    if (this.sqlSessionTemplate == null ||
+      sqlSessionFactory != this.sqlSessionTemplate.getSqlSessionFactory()) {
+      //根据sessionFactory创建sqlSessionTemplate
       this.sqlSessionTemplate = createSqlSessionTemplate(sqlSessionFactory);
     }
   }
@@ -64,9 +66,11 @@ public abstract class SqlSessionDaoSupport extends DaoSupport {
    *          the MyBatis SqlSessionFactory to create a SqlSessionTemplate for
    * @return the new SqlSessionTemplate instance
    * @see #setSqlSessionFactory
+   * 根据sessionFactory创建sqlSessionTemplate
    */
   @SuppressWarnings("WeakerAccess")
   protected SqlSessionTemplate createSqlSessionTemplate(SqlSessionFactory sqlSessionFactory) {
+
     return new SqlSessionTemplate(sqlSessionFactory);
   }
 

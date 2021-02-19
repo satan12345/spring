@@ -73,11 +73,16 @@ import org.springframework.dao.support.PersistenceExceptionTranslator;
  * @see MyBatisExceptionTranslator
  */
 public class SqlSessionTemplate implements SqlSession, DisposableBean {
-
+  /**
+   * sqlSession工厂
+   */
   private final SqlSessionFactory sqlSessionFactory;
 
   private final ExecutorType executorType;
-
+  /**
+   * 另一个sqlSession的动态代理
+   * SqlSessionTemplate中真正执行sql的代理
+   */
   private final SqlSession sqlSessionProxy;
 
   private final PersistenceExceptionTranslator exceptionTranslator;
@@ -89,6 +94,9 @@ public class SqlSessionTemplate implements SqlSession, DisposableBean {
    *          a factory of SqlSession
    */
   public SqlSessionTemplate(SqlSessionFactory sqlSessionFactory) {
+    /**
+     * session工厂与默认的执行器
+     */
     this(sqlSessionFactory, sqlSessionFactory.getConfiguration().getDefaultExecutorType());
   }
 
@@ -128,8 +136,19 @@ public class SqlSessionTemplate implements SqlSession, DisposableBean {
     this.sqlSessionFactory = sqlSessionFactory;
     this.executorType = executorType;
     this.exceptionTranslator = exceptionTranslator;
+    //sqlSession动态代理执行的拦截器
+    SqlSessionInterceptor sqlSessionInterceptor = new SqlSessionInterceptor();
+    /**
+     * 创建sqlSession的动态代理类
+     * sqlSessionProxy 为真正执行的sql的方法
+     * 在sqlSessionProxy该动态代理真正执行方法的时候
+     * 会在sqlSessionInterceptor的invoke方法中创建
+     * SqlSession 用于执行 sql
+     * 所以sqlSessionTemplate不会存在线程安全问题
+     *
+     */
     this.sqlSessionProxy = (SqlSession) newProxyInstance(SqlSessionFactory.class.getClassLoader(),
-        new Class[] { SqlSession.class }, new SqlSessionInterceptor());
+        new Class[] { SqlSession.class }, sqlSessionInterceptor);
   }
 
   public SqlSessionFactory getSqlSessionFactory() {
@@ -421,6 +440,7 @@ public class SqlSessionTemplate implements SqlSession, DisposableBean {
   private class SqlSessionInterceptor implements InvocationHandler {
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+      //每次调用的时候都会创建一个新的sqlSession
       SqlSession sqlSession = getSqlSession(SqlSessionTemplate.this.sqlSessionFactory,
           SqlSessionTemplate.this.executorType, SqlSessionTemplate.this.exceptionTranslator);
       try {

@@ -99,7 +99,9 @@ public class SqlSessionFactoryBean
   private Configuration configuration;
 
   private Resource[] mapperLocations;
-
+  /**
+   * 数据源
+   */
   private DataSource dataSource;
 
   private TransactionFactory transactionFactory;
@@ -399,7 +401,7 @@ public class SqlSessionFactoryBean
    *
    * @param dataSource
    *          a JDBC {@code DataSource}
-   *
+   *设置数据源
    */
   public void setDataSource(DataSource dataSource) {
     if (dataSource instanceof TransactionAwareDataSourceProxy) {
